@@ -1,0 +1,265 @@
+# Gold Q&A for the two ingested IDBI BRSR reports (FY 2024-25 and FY 2025-26).
+# Values are ground-truthed from the source PDFs / output/chunks.parquet,
+# NOT from the extracted graph — so the eval also catches extraction errors.
+#
+# fields: id, question, method (local|global|both), category, must_include,
+#         must_not_include (optional), expected (human/judge reference), source
+
+# ---------------- Environmental ----------------
+- id: scope1-fy25
+  question: "What were IDBI Bank's total Scope 1 GHG emissions for FY 2024-25?"
+  method: local
+  category: environmental
+  must_include: ["2360.87", "tCO2e"]
+  expected: "2,360.87 tCO2e"
+  source: "BRSR FY2024-25, Principle 6, GHG emissions table"
+
+- id: scope2-fy25
+  question: "What were IDBI Bank's total Scope 2 GHG emissions for FY 2024-25?"
+  method: local
+  category: environmental
+  must_include: ["57763.14", "tCO2e"]
+  expected: "57,763.14 tCO2e"
+  source: "BRSR FY2024-25, Principle 6, GHG emissions table"
+
+- id: scope3-fy25
+  question: "What were IDBI Bank's total Scope 3 GHG emissions for FY 2024-25?"
+  method: local
+  category: environmental
+  must_include: ["1573.92", "tCO2e"]
+  expected: "1,573.92 tCO2e"
+  source: "BRSR FY2024-25, Principle 6, Scope 3 table"
+
+- id: energy-total-fy25
+  question: "What was IDBI Bank's total energy consumption for FY 2024-25, in GJ?"
+  method: local
+  category: environmental
+  must_include: ["310573.94"]
+  expected: "3,10,573.94 GJ (all from non-renewable sources)"
+  source: "BRSR FY2024-25, Principle 6, energy consumption table"
+
+- id: energy-total-fy24
+  question: "What was IDBI Bank's total energy consumption for FY 2023-24, in GJ?"
+  method: local
+  category: environmental
+  must_include: ["73421.16"]
+  expected: "73,421.16 GJ"
+  source: "BRSR FY2024-25, Principle 6, energy consumption table (prior-year column)"
+
+- id: water-withdrawal-fy25
+  question: "What was IDBI Bank's total water withdrawal for FY 2024-25, in kilolitres?"
+  method: local
+  category: environmental
+  must_include: ["333091.94"]
+  expected: "3,33,091.94 kilolitres"
+  source: "BRSR FY2024-25, Principle 6, water withdrawal table"
+
+- id: water-withdrawal-fy26
+  question: "What was IDBI Bank's total water withdrawal for FY 2025-26, in kilolitres?"
+  method: local
+  category: environmental
+  must_include: ["540151.13"]
+  expected: "5,40,151.13 KL"
+  source: "BRSR FY2025-26, Principle 6, water withdrawal table"
+
+- id: renewable-energy-fy25
+  question: "How much energy did IDBI Bank consume from renewable sources in FY 2024-25?"
+  method: local
+  category: environmental
+  must_include: ["not applicable"]
+  must_not_include: ["310573.94"]
+  expected: "Not Applicable / none reported from renewable sources"
+  source: "BRSR FY2024-25, Principle 6, energy table (renewable rows = Not Applicable)"
+
+# ---------------- Social ----------------
+- id: total-employees-fy25
+  question: "What was IDBI Bank's total number of employees in FY 2024-25?"
+  method: local
+  category: social
+  must_include: ["19087"]
+  expected: "19,087 total employees (12,333 male, 6,754 female)"
+  source: "BRSR FY2024-25, Principle 3, employee table, Total Employees (A+B)"
+
+- id: total-employees-fy26
+  question: "What was IDBI Bank's total number of employees in FY 2025-26?"
+  method: local
+  category: social
+  must_include: ["20123"]
+  expected: "20,123 total employees (12,820 male, 7,303 female)"
+  source: "BRSR FY2025-26, Principle 3, employee table, Total Employees (D+E)"
+
+- id: permanent-employees-fy25
+  question: "How many permanent employees did IDBI Bank have in FY 2024-25?"
+  method: local
+  category: social
+  must_include: ["16911"]
+  expected: "16,911 permanent employees (11,123 male, 5,788 female)"
+  source: "BRSR FY2024-25, Principle 3, Permanent Employees (A)"
+
+- id: female-employees-fy25
+  question: "How many female employees did IDBI Bank have in FY 2024-25?"
+  method: local
+  category: social
+  must_include: ["6754"]
+  expected: "6,754 female employees (35.39% of total)"
+  source: "BRSR FY2024-25, Principle 3, Total Employees (A+B) female column"
+
+- id: ltifr-fy25
+  question: "What was IDBI Bank's Lost Time Injury Frequency Rate (LTIFR) for employees in FY 2024-25?"
+  method: local
+  category: social
+  must_include: ["0"]
+  expected: "0 (per one million person-hours worked)"
+  source: "BRSR FY2024-25, Principle 3, safety-related KPIs"
+
+- id: employees-yoy
+  question: "How did IDBI Bank's total employee headcount change from FY 2024-25 to FY 2025-26?"
+  method: local
+  category: social
+  must_include: ["19087", "20123"]
+  expected: "Increased from 19,087 (FY2024-25) to 20,123 (FY2025-26)."
+  source: "BRSR FY2024-25 and FY2025-26 employee tables"
+
+# ---------------- Governance ----------------
+- id: assurance-provider-fy25
+  question: "Who provided assurance for IDBI Bank's BRSR for FY 2024-25?"
+  method: local
+  category: governance
+  must_include: ["Chokshi & Chokshi", "Suri & Co"]
+  expected: "Chokshi & Chokshi LLP and Suri & Co. (the Bank's statutory auditors)"
+  source: "BRSR FY2024-25, Section I, item 14"
+
+- id: assurance-type-fy25
+  question: "What type of assurance did IDBI Bank obtain on its FY 2024-25 BRSR?"
+  method: local
+  category: governance
+  must_include: ["reasonable assurance", "BRSR Core"]
+  expected: "Reasonable assurance for the BRSR Core disclosures"
+  source: "BRSR FY2024-25, Section I, item 15"
+
+- id: reporting-boundary-fy25
+  question: "What is the reporting boundary of IDBI Bank's FY 2024-25 BRSR?"
+  method: local
+  category: governance
+  must_include: ["standalone"]
+  expected: "Standalone"
+  source: "BRSR FY2024-25, Section I, item 13"
+
+- id: whistleblower-policy
+  question: "Does IDBI Bank have a whistleblower / vigil mechanism policy?"
+  method: local
+  category: governance
+  must_include: ["yes"]
+  must_not_include: ["no information", "not mentioned"]
+  expected: "Yes — IDBI Bank has a Whistle Blower Policy / vigil mechanism."
+  source: "BRSR, Principle 1, policy disclosures"
+
+- id: esg-committee
+  question: "Which board committee at IDBI Bank oversees ESG and CSR matters?"
+  method: local
+  category: governance
+  must_include: ["CSR", "ESG"]
+  expected: "The CSR & ESG Committee of the Board"
+  source: "BRSR / Annual Report governance section"
+
+- id: anti-corruption-policy
+  question: "Does IDBI Bank have an anti-bribery or anti-corruption policy?"
+  method: local
+  category: governance
+  must_include: ["yes"]
+  expected: "Yes — IDBI Bank has an Anti-Bribery and Anti-Corruption Policy."
+  source: "BRSR, Principle 1"
+
+# ---------------- Reporting / Organization ----------------
+- id: frameworks-used
+  question: "Which reporting framework(s) does IDBI Bank's BRSR follow?"
+  method: local
+  category: reporting
+  must_include: ["BRSR"]
+  expected: "SEBI's Business Responsibility and Sustainability Report (BRSR) format, structured around the nine NGRBC principles."
+  source: "BRSR document structure; NGRBC principles P1-P9"
+
+- id: ngrbc-principles
+  question: "How many NGRBC principles does IDBI Bank report against in its BRSR?"
+  method: local
+  category: reporting
+  must_include: ["9"]
+  expected: "Nine (P1 to P9)"
+  source: "BRSR, Section C / NGRBC review table"
+
+- id: branches-fy25
+  question: "How many branches did IDBI Bank operate (per the FY 2024-25 BRSR)?"
+  method: local
+  category: organization
+  must_include: ["2127"]
+  expected: "2,127 branches"
+  source: "BRSR FY2024-25, Section II, locations table"
+
+- id: main-activity
+  question: "What is IDBI Bank's main business activity as described in the BRSR?"
+  method: local
+  category: organization
+  must_include: ["bank"]
+  expected: "Banking / monetary intermediation (FY2024-25 report: 'Financial and Insurance Service'; FY2025-26: 'Monetary intermediation of commercial banks', NIC 64191)"
+  source: "BRSR Section I, description of main activity"
+
+- id: company-name
+  question: "What is the full legal name of the entity the BRSR reports on?"
+  method: local
+  category: organization
+  must_include: ["IDBI Bank"]
+  expected: "IDBI Bank Limited"
+  source: "BRSR, Section I, item 1"
+
+# ---------------- Global / thematic ----------------
+- id: sustainability-approach
+  question: "How does IDBI Bank approach sustainability and ESG overall?"
+  method: global
+  category: reporting
+  must_include: ["BRSR"]
+  expected: "Reports via BRSR/NGRBC; ESG governance under a board committee; policies on human rights, anti-corruption, whistleblowing; green deposit / sustainable finance; tracks emissions, energy, water, waste."
+  source: "Whole BRSR"
+
+- id: environmental-topics
+  question: "What environmental topics does IDBI Bank disclose on?"
+  method: global
+  category: environmental
+  must_include: ["emissions", "energy", "water"]
+  expected: "GHG emissions (Scope 1/2/3), energy consumption and intensity, water withdrawal/consumption/discharge, waste."
+  source: "BRSR Principle 6"
+
+- id: stakeholder-groups
+  question: "Which stakeholder groups does IDBI Bank identify and engage with?"
+  method: global
+  category: social
+  must_include: ["customers", "employees"]
+  expected: "Customers, employees, investors/shareholders, regulators/government, communities, suppliers/vendors."
+  source: "BRSR Principle 4, stakeholder engagement"
+
+# ---------------- Negative / must-decline ----------------
+- id: netzero-scope3-target
+  question: "What is IDBI Bank's target year for achieving net-zero Scope 3 emissions?"
+  method: local
+  category: negative
+  must_include: ["not", "no"]
+  must_not_include: ["2030", "2050", "2070"]
+  expected: "The report does not state a net-zero Scope 3 target year — the answer must decline."
+  source: "No such target disclosed in either BRSR"
+
+- id: made-up-subsidiary
+  question: "How much revenue did IDBI Bank's fictional subsidiary 'IDBI Green Energy Ltd' generate?"
+  method: local
+  category: negative
+  must_include: ["not", "no"]
+  must_not_include: ["crore", "million"]
+  expected: "No such entity exists in the reports — the answer must decline."
+  source: "Not in the reports"
+
+- id: employee-2019
+  question: "What was IDBI Bank's total employee count in FY 2019-20?"
+  method: local
+  category: negative
+  must_include: ["not"]
+  must_not_include: ["19087", "20123"]
+  expected: "Neither ingested report covers FY 2019-20 — the answer must decline."
+  source: "Out of scope of the ingested reports"
