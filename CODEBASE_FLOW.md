@@ -52,10 +52,13 @@ Orchestrates the whole build. Steps, in order:
 
 ### 3.1 Load + chunk — `graphrag/chunking.py`
 - `load_documents()` walks `input/` (recursively). Readers by extension:
-  - `.pdf` → `pypdf`, one `===== PAGE N =====` marker per page (kept so the LLM can
-    record `page_number` in provenance).
-  - `.xlsx/.xls/.csv` → pandas → markdown tables, one block per sheet.
-  - `.txt/.md` → raw text.
+  - `.txt/.md/.markdown` → raw `path.read_text`.
+  - everything else (`.pdf .docx .pptx .xlsx .xls .csv .html .xml .json .epub`) →
+    **Microsoft MarkItDown** (`MarkItDown().convert(path).text_content`), one shared
+    cached converter. PDFs come back with `<!-- Page number: N -->` comments, which
+    the extraction prompt reads for `page_number` provenance and
+    `pipeline._strip_markers` removes before embedding.
+  - a reader that throws logs a warning and skips that file.
   - Returns `{doc_id: text}` where `doc_id` is the filename stem.
 - `chunk_documents()` uses LangChain `TokenTextSplitter` (1200 tokens, 100 overlap)
   → list of `Chunk(id, doc_id, chunk_index, text)`. `id` = sha256(`doc_id:index`)[:16].

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import yaml
 
+from graphrag.config import CONFIG
 from graphrag.graphdb import Neo4jClient
 from graphrag.llm import LLM
 from graphrag.log import setup_logging
@@ -25,24 +26,37 @@ from graphrag.retrieve.local_search import local_search
 from .judge import judge as judge_answer
 from .normalize import contains_all, contains_any
 
-GOLD = Path(__file__).parent / "gold.yaml"
-RESULTS = Path(__file__).parent / "results"
+EVAL_DIR = Path(__file__).parent
+GOLD = EVAL_DIR / "gold.yaml"
+RESULTS = EVAL_DIR / "results"
 
 
-def load_gold(path: Path = GOLD) -> list[dict]:
-    return yaml.safe_load(path.read_text())
+def load_gold(path: Path | None = None) -> list[dict]:
+    """Load one gold file, or every eval/gold*.yaml when no path is given."""
+    paths = [path] if path else sorted(EVAL_DIR.glob("gold*.yaml"))
+    items: list[dict] = []
+    seen: dict[str, Path] = {}
+    for p in paths:
+        for item in yaml.safe_load(p.read_text()) or []:
+            if item["id"] in seen:
+                raise ValueError(f"duplicate gold id {item['id']!r} in {p.name} "
+                                 f"(already in {seen[item['id']].name})")
+            seen[item["id"]] = p
+            items.append(item)
+    return items
 
 
-def _run_one(item: dict, db: Neo4jClient, llm: LLM, method_override: str | None):
+def _run_one(item: dict, db: Neo4jClient, llm: LLM, method_override: str | None,
+             chunk_search: bool = False, top_k: int = 15):
     method = method_override or item.get("method", "local")
     runs: dict[str, dict] = {}
     if method in ("local", "both"):
-        r = local_search(item["question"], db, llm)
+        r = local_search(item["question"], db, llm, top_k=top_k, chunk_search=chunk_search)
         runs["local"] = {"answer": r.answer, "context": r.context,
                          "entities": r.entities, "chunks": r.chunks}
     if method in ("global", "both"):
         r = global_search(item["question"], db, llm)
-        runs["global"] = {"answer": r.answer, "context": "", "points": r.points}
+        runs["global"] = {"answer": r.answer, "context": "",   "themes": r.themes,}
     return method, runs
 
 
@@ -134,6 +148,10 @@ def main() -> int:
     ap.add_argument("--only", help="filter by category")
     ap.add_argument("--ids", help="comma-separated ids to run")
     ap.add_argument("--method-override", choices=["local", "global", "both"])
+    ap.add_argument("--chunk-search", action="store_true",
+                    help="local search also runs a direct query->chunk vector search "
+                         "(plain-RAG safety net for prose/table facts no entity captured)")
+    ap.add_argument("--top-k", type=int, default=15, help="seed entities for local search")
     ap.add_argument("--compare", type=Path)
     ap.add_argument("--min-pass", type=float, default=0.0)
     ap.add_argument("--out", type=Path, default=RESULTS)
@@ -156,7 +174,8 @@ def main() -> int:
     try:
         db.driver.verify_connectivity()
         for i, item in enumerate(gold, 1):
-            method, runs = _run_one(item, db, llm, args.method_override)
+            method, runs = _run_one(item, db, llm, args.method_override,
+                                    chunk_search=args.chunk_search, top_k=args.top_k)
             results.append(score_item(item, runs, args.judge, llm))
             print(f"  [{i}/{len(gold)}] {item['id']:<26} "
                   f"{'PASS' if results[-1]['answer_pass'] else 'FAIL'} ({results[-1]['chosen_mode']})")
@@ -171,6 +190,8 @@ def main() -> int:
     args.out.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
     payload = {"stamp": stamp, "model": llm.model, "judge": args.judge,
+               "chunk_search": args.chunk_search, "top_k": args.top_k,
+               "embed_provider": CONFIG.embed_provider, "embed_dim": CONFIG.embed_dim,
                "summary": summary, "results": results}
     (args.out / f"{stamp}.json").write_text(json.dumps(payload, indent=2))
     (args.out / "latest.md").write_text(

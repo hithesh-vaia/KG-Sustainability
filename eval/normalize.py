@@ -54,19 +54,53 @@ def number_close(needle: str, haystack: str, rel_tol: float = 0.01) -> bool:
     return False
 
 
+_NON_NUMERIC = re.compile(r"[\d.,%/:+-]")
+
+
+def _is_numeric_needle(needle: str) -> bool:
+    """Should `needle` be compared as a number?
+
+    Only when the needle is essentially a quantity ("57,763.14", "4.30 MT") --
+    not when it merely happens to contain a digit. Without this, a needle like
+    "tCO2e for the entire loan portfolio" yields the number 2 and then matches
+    any answer containing a 2; likewise "ISO 45001:2018" or "24x7 SOC".
+    """
+    n = normalize(needle).lstrip("rupees dollars ").strip()
+    if not n or not n[0].isdigit():
+        return False                  # "iso 45001:2018", "tco2e ..." are labels
+    residue = _NON_NUMERIC.sub("", n).replace(" ", "")
+    return len(residue) <= 8          # leaves room for a unit like "tco2e" / "mt"
+
+
 def matches(needle: str, haystack_norm: str) -> bool:
     n = normalize(needle)
     if n and n in haystack_norm:
         return True
-    return number_close(needle, haystack_norm)
+    return _is_numeric_needle(needle) and number_close(needle, haystack_norm)
 
 
-def contains_all(haystack: str, needles: list[str]) -> tuple[bool, list[str]]:
+def _matches_needle(needle, haystack_norm: str) -> bool:
+    """A needle is a string, or a list of alternatives meaning "any of these".
+
+    Alternatives matter for questions where several correct phrasings exist --
+    "none" / "zero" / "nil" all answer "were there any fatalities?" -- and without
+    them such items can only be scored with substrings so short they match anything.
+    """
+    if isinstance(needle, (list, tuple)):
+        return any(matches(alt, haystack_norm) for alt in needle)
+    return matches(needle, haystack_norm)
+
+
+def _label(needle) -> str:
+    return " | ".join(str(x) for x in needle) if isinstance(needle, (list, tuple)) else str(needle)
+
+
+def contains_all(haystack: str, needles: list) -> tuple[bool, list[str]]:
     hn = normalize(haystack)
-    missing = [x for x in (needles or []) if not matches(x, hn)]
+    missing = [_label(x) for x in (needles or []) if not _matches_needle(x, hn)]
     return (not missing, missing)
 
 
-def contains_any(haystack: str, needles: list[str]) -> list[str]:
+def contains_any(haystack: str, needles: list) -> list[str]:
     hn = normalize(haystack)
-    return [x for x in (needles or []) if matches(x, hn)]
+    return [_label(x) for x in (needles or []) if _matches_needle(x, hn)]

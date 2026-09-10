@@ -67,7 +67,7 @@ def query(
                 typer.secho("\n── GLOBAL ─────────────────────────────", fg="cyan")
             typer.echo(res.answer)
             typer.secho(
-                f"\n[{len(res.points)} points from {res.communities_used} community reports]",
+                f"\n[{len(res.themes)}  from {res.communities_used} community reports]",
                 fg="bright_black",
             )
         typer.secho(f"[{llm.usage.summary()}]", fg="bright_black")

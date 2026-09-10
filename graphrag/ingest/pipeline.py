@@ -21,7 +21,11 @@ from ..log import setup_logging, get_logger
 log = get_logger()
 
 
-_PAGE_MARKER = re.compile(r"\n?=====\s*PAGE\s+\d+\s*=====\n?")
+# MarkItDown emits "<!-- Page number: N -->"; older ingests used "===== PAGE N ====="
+_PAGE_MARKER = re.compile(
+    r"\n?(?:=====\s*PAGE\s+\d+\s*=====|<!--\s*Page number:\s*\d+\s*-->)\n?",
+    re.IGNORECASE,
+)
 
 
 def _strip_markers(text: str) -> str:
@@ -110,6 +114,7 @@ def run_ingest(input_dir: Path | None = None, reset: bool = False, use_cache: bo
                     "strength": r.strength,
                     "confidence": r.confidence,
                     "provenance_json": json.dumps(r.provenance, default=str),
+                    "derived": bool(r.properties.get("derived", False)),
                 }
                 for r in relationships
             ]

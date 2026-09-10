@@ -6,3 +6,7 @@ output/
 *.egg-info/
 .pytest_cache/
 eval/results/
+service_account.json
+
+# debug dump of converted PDF text
+document.md

@@ -24,8 +24,30 @@ class Neo4jClient:
             yield s
 
     # ---- schema -----------------------------------------------------------
+    def _drop_stale_vector_indexes(self, dim: int) -> None:
+        """Vector indexes are fixed-dimension and CREATE ... IF NOT EXISTS will not
+        resize one. Switching EMBED_PROVIDER / EMBED_DIM therefore silently keeps the
+        old dimension and every write fails, so drop any index that no longer matches.
+        """
+        from .log import get_logger
+
+        log = get_logger()
+        with self.session() as s:
+            stale = [
+                r["name"]
+                for r in s.run(
+                    "SHOW INDEXES YIELD name, type, options "
+                    "WHERE type = 'VECTOR' RETURN name, options"
+                )
+                if r["options"]["indexConfig"].get("vector.dimensions") != dim
+            ]
+            for name in stale:
+                log.info("dropping vector index %s (dimension != %d)", name, dim)
+                s.run(f"DROP INDEX {name} IF EXISTS")
+
     def init_schema(self) -> None:
         dim = self.config.embed_dim
+        self._drop_stale_vector_indexes(dim)
         stmts = [
             "CREATE CONSTRAINT entity_name IF NOT EXISTS FOR (e:Entity) REQUIRE e.name IS UNIQUE",
             "CREATE CONSTRAINT chunk_id IF NOT EXISTS FOR (c:Chunk) REQUIRE c.id IS UNIQUE",
@@ -81,7 +103,8 @@ class Neo4jClient:
         MERGE (a)-[r:RELATED {key: row.key}]->(b)
         SET r.type = row.rel_type, r.description = row.description,
             r.strength = row.strength, r.confidence = row.confidence,
-            r.provenance = row.provenance_json
+            r.provenance = row.provenance_json,
+            r.derived = coalesce(row.derived, false)
         """
         with self.session() as s:
             s.run(query, rows=rows)
@@ -122,20 +145,49 @@ class Neo4jClient:
             return [dict(r) for r in s.run(query, k=k, embedding=embedding)]
 
     def entity_context(self, names: list[str], max_chunks: int = 8) -> dict:
+        # Derived edges (period siblings, orphan-figure owner edges) are excluded
+        # from neighbour expansion: they exist to connect the graph and feed
+        # community detection, but pulling every sibling / every figure the org
+        # owns into the context inflates the Entities section and evicts source
+        # text and community reports from the token budget.
+        # Independent CALL subqueries per collection -- chaining OPTIONAL MATCHes
+        # instead multiplies rows (neighbours x chunks x communities per seed) and
+        # is pathological now that hubs like the reporting org carry hundreds of
+        # edges: a single query was taking minutes and collecting thousands of
+        # copies of long community reports before DISTINCT.
         query = """
         MATCH (e:Entity) WHERE e.name IN $names
-        OPTIONAL MATCH (e)-[r:RELATED]-(nb:Entity)
-        OPTIONAL MATCH (e)-[:MENTIONED_IN]->(ch:Chunk)
-        OPTIONAL MATCH (e)-[:IN_COMMUNITY]->(co:Community)
-        RETURN
-          collect(DISTINCT {name: e.name, type: e.entity_type, domain: e.domain,
-                            description: e.description, properties: e.properties}) AS entities,
-          collect(DISTINCT {source: startNode(r).name, target: endNode(r).name,
-                            rel_type: r.type, description: r.description,
-                            strength: r.strength}) AS relationships,
-          collect(DISTINCT {name: nb.name, type: nb.entity_type, description: nb.description}) AS neighbors,
-          collect(DISTINCT {id: ch.id, text: ch.text})[0..$max_chunks] AS chunks,
-          collect(DISTINCT {id: co.id, title: co.title, content: co.full_content, rating: co.rating}) AS communities
+        WITH collect(e) AS seeds
+        CALL (seeds) {
+          UNWIND seeds AS e
+          RETURN collect(DISTINCT {name: e.name, type: e.entity_type, domain: e.domain,
+                                   description: e.description, properties: e.properties}) AS entities
+        }
+        CALL (seeds) {
+          UNWIND seeds AS e
+          MATCH (e)-[r:RELATED]-(nb:Entity)
+          WHERE coalesce(r.derived, false) = false
+          WITH r, nb LIMIT 400
+          RETURN collect(DISTINCT {source: startNode(r).name, target: endNode(r).name,
+                                   rel_type: r.type, description: r.description,
+                                   strength: r.strength}) AS relationships,
+                 collect(DISTINCT {name: nb.name, type: nb.entity_type,
+                                   description: nb.description}) AS neighbors
+        }
+        CALL (seeds) {
+          UNWIND seeds AS e
+          MATCH (e)-[:MENTIONED_IN]->(ch:Chunk)
+          WITH DISTINCT ch LIMIT $max_chunks
+          RETURN collect({id: ch.id, text: ch.text}) AS chunks
+        }
+        CALL (seeds) {
+          UNWIND seeds AS e
+          MATCH (e)-[:IN_COMMUNITY]->(co:Community)
+          WITH DISTINCT co ORDER BY co.rating DESC LIMIT 12
+          RETURN collect({id: co.id, title: co.title, content: co.full_content,
+                          rating: co.rating}) AS communities
+        }
+        RETURN entities, relationships, neighbors, chunks, communities
         """
         with self.session() as s:
             rec = s.run(query, names=names, max_chunks=max_chunks).single()

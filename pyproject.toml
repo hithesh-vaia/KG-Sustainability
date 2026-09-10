@@ -17,11 +17,10 @@ dependencies = [
     "typer>=0.12",
     "tenacity>=8.3",
     "numpy>=1.26",
-    "pypdf>=4.2",
-    "openpyxl>=3.1",
-    "tabulate>=0.9",
+    "markitdown[pdf,docx,pptx,xlsx,xls]>=0.1.0",
     "pyvis>=0.3.2",
     "pyyaml>=6",
+    "google-genai>=1.0",
 ]
 
 [project.optional-dependencies]
