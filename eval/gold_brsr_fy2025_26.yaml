@@ -1,0 +1,411 @@
+# Gold Q&A for IDBI BRSR FY 2025-26, converted from
+# brsr_fy2025_26_graphrag_eval.jsonl (36 items).
+#
+# Source schema -> harness schema:
+#   expected_answer -> expected     must_not_claim -> must_not_include
+#   type/difficulty kept as metadata (unused by the scorer, handy for filtering)
+#   method inferred from type: semantic -> both, everything else -> local
+#
+# NOTE: items marked `# review:` have must_include needles short enough that
+# substring matching passes on almost any answer -- tighten before trusting them.
+
+# ---------------- accessibility ----------------
+- id: brsr_022
+  question: "As of March 31, 2026, how many branches had ramps, how many were installing ramps, how many did not require ramps, and how many were on upper floors where ramps were infeasible?"
+  method: local
+  category: accessibility
+  must_include: ["1078", "33", "293", "770"]
+  expected: "1,078 had ramps; 33 were installing ramps; 293 did not require ramps; 770 were on upper floors where ramps were infeasible."
+  source: "Principle 5 leadership indicators, BRSR page 326 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: hard
+
+# ---------------- anti_corruption ----------------
+- id: brsr_012
+  # review: weak must_include needle(s) -- see comment above
+  question: "Does IDBI Bank have an anti-bribery and anti-corruption policy? What is its stated stance?"
+  method: local
+  category: anti_corruption
+  must_include: ["Yes", "Board-approved", "zero-tolerance"]
+  expected: "Yes. It has a Board-approved policy and states a zero-tolerance approach to bribery and corruption."
+  source: "Principle 1, Essential Indicators, BRSR page 320 (BRSR-FY-2025-26(1).pdf)"
+  type: boolean_plus_detail
+  difficulty: easy
+
+- id: brsr_013
+  # review: weak must_include needle(s) -- see comment above
+  question: "How many Directors, KMPs, employees and workers had disciplinary action by law enforcement for bribery/corruption in FY 2025-26?"
+  method: local
+  category: anti_corruption
+  must_include: ["Directors", "KMPs", "employees", "workers", "Nil"]
+  expected: "Nil for all four categories."
+  source: "Principle 1, BRSR page 320 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+# ---------------- climate ----------------
+- id: brsr_023
+  question: "What were Scope 1 and Scope 2 GHG emissions for FY 2025-26?"
+  method: local
+  category: climate
+  must_include: ["4518.16", "56165.62"]
+  expected: "Scope 1: 4,518.16 tCO2e; Scope 2: 56,165.62 tCO2e."
+  source: "Environmental disclosures, BRSR page 342 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+- id: brsr_024
+  question: "What was the total Scope 1 + Scope 2 emission intensity per crore INR in FY 2025-26?"
+  method: local
+  category: climate
+  must_include: ["1.70", "tCO2e", "crore"]
+  expected: "1.70 tCO2e per crore INR."
+  source: "Environmental disclosures, BRSR page 342 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+- id: brsr_025
+  question: "Did Scope 1 emissions increase or decrease from FY 2024-25 to FY 2025-26, and by how much numerically?"
+  method: local
+  category: climate
+  must_include: ["2360.87", "4518.16", "2157.29", "increase"]
+  expected: "They increased from 2,360.87 to 4,518.16 tCO2e, an increase of 2,157.29 tCO2e."
+  source: "Environmental disclosures, BRSR page 342 (BRSR-FY-2025-26(1).pdf)"
+  type: temporal_comparison
+  difficulty: hard
+
+- id: brsr_026
+  question: "Can FY 2025-26 Scope 1 and Scope 2 emissions be directly compared with FY 2024-25 according to the report?"
+  method: local
+  category: climate
+  must_include: ["not comparable", "2244", "283"]
+  expected: "No. The report explicitly says FY 2025-26 GHG data is not comparable to FY 2024-25 because the FY25-26 boundary/coverage was expanded to all 2,244 branches and 283 offices, with specified Scope 1 and Scope 2 coverage."
+  source: "Environmental disclosures note, BRSR page 342 (BRSR-FY-2025-26(1).pdf)"
+  type: temporal_caveat
+  difficulty: hard
+
+# ---------------- customer ----------------
+- id: brsr_030
+  question: "How many FY 2025-26 consumer complaints were reported for data privacy, advertising and cyber-security, and how many cyber-security complaints were pending?"
+  method: local
+  category: customer
+  must_include: ["20", "7", "5517", "46"]
+  expected: "Data privacy: 20; advertising: 7; cyber-security: 5,517 received, with 46 pending."
+  source: "Principle 9, BRSR page 355 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+# ---------------- customer_satisfaction ----------------
+- id: brsr_031
+  # review: weak must_include needle(s) -- see comment above
+  question: "Was the FY 2025-26 C-SAT survey complete at the time of the BRSR disclosure?"
+  method: local
+  category: customer_satisfaction
+  must_include: ["underway", "3200", "16", "NPS"]
+  expected: "No. It was underway. The previous FY 2024-25 survey used CATI, covered 3,200 respondents across 16 zones, and used NPS as the primary metric."
+  source: "Customer satisfaction disclosure, BRSR page 359 (BRSR-FY-2025-26(1).pdf)"
+  type: temporal_status
+  difficulty: hard
+
+# ---------------- data_security ----------------
+- id: brsr_032
+  # review: weak must_include needle(s) -- see comment above
+  question: "What major governance and technical controls does the bank describe for customer privacy and cybersecurity?"
+  method: both
+  category: data_security
+  must_include: ["CISO", "24x7 SOC", "ISO/IEC 27001:2022", "MFA", "encryption", "Data Protection Office"]
+  expected: "A CISO-led Information Security Group, information/cybersecurity policies, cyber crisis management and breach-readiness exercises, 24x7 SOC at the Navi Mumbai data centre and Chennai DR site, ISO/IEC 27001:2022 certification for DC/DR/Near-DR, MFA, encryption, fraud monitoring, cloud-security controls and cyber-risk insurance; a Data Protection Office/DPO was established effective April 15, 2025."
+  source: "Material issue: Customer Privacy and Data Security, BRSR pages 298-299 (BRSR-FY-2025-26(1).pdf)"
+  type: semantic
+  difficulty: hard
+
+# ---------------- document_identity ----------------
+- id: brsr_001
+  question: "What financial year does IDBI Bank's BRSR cover, and what is the reporting boundary?"
+  method: local
+  category: document_identity
+  must_include: ["FY 2025-26", "standalone"]
+  expected: "FY 2025-26; standalone basis."
+  source: "Section A, Q9 and Q13, BRSR pages 288 (BRSR-FY-2025-26(1).pdf)"
+  type: exact_fact
+  difficulty: easy
+
+- id: brsr_002
+  question: "Who provided reasonable assurance for the BRSR Core disclosures?"
+  method: local
+  category: document_identity
+  must_include: ["Chokshi & Chokshi LLP", "Suri & Co."]
+  expected: "Chokshi & Chokshi LLP and Suri & Co., the Bank's statutory auditors."
+  source: "Section A, Q14-Q15, BRSR page 288 (BRSR-FY-2025-26(1).pdf)"
+  type: exact_fact
+  difficulty: easy
+
+# ---------------- employee_development ----------------
+- id: brsr_018
+  question: "What percentage of total employees received performance/career development reviews in FY 2025-26?"
+  method: local
+  category: employee_development
+  must_include: ["93.96"]
+  expected: "93.96%."
+  source: "Principle 3, BRSR page 328 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+# ---------------- employee_safety ----------------
+- id: brsr_016
+  # Was must_include ["no","none"]: "no" is a substring of "not"/"none"/"nominal",
+  # so any answer -- including a refusal -- scored as a pass. Assert the substantive
+  # claim (a reported count of zero) and forbid the opposite claim instead.
+  question: "Were there any high-consequence work-related injuries, ill-health cases or fatalities among bank employees/workers in FY 2025-26?"
+  method: local
+  category: employee_safety
+  must_include: [["none", "zero", "nil", "no high-consequence", "no fatalities"]]
+  expected: "No. The report states there were none (zero fatalities and zero high-consequence injuries)."
+  source: "Principle 3, BRSR page 328 (BRSR-FY-2025-26(1).pdf)"
+  type: negative_fact
+  difficulty: easy
+
+- id: brsr_017
+  question: "What occupational safety system has IDBI Bank adopted?"
+  method: both
+  category: employee_safety
+  must_include: ["i-OSHA", "ISO 45001:2018"]
+  expected: "The Integrated Occupational Safety, Health and Assurance (i-OSHA) Policy, aligned with ISO 45001:2018, the Occupational Safety, Health and Working Conditions Code 2020 and other national standards."
+  source: "Principle 3, BRSR pages 328-330 (BRSR-FY-2025-26(1).pdf)"
+  type: semantic
+  difficulty: medium
+
+# ---------------- governance ----------------
+- id: brsr_007
+  question: "What percentage of the Board of Directors and Key Management Personnel were women as of March 31, 2026?"
+  method: local
+  category: governance
+  must_include: ["9.09", "40.00"]
+  expected: "Board: 9.09%; KMP: 40.00%."
+  source: "Section A, Q21, BRSR page 290 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+# ---------------- grievances ----------------
+- id: brsr_008
+  question: "How many customer complaints were filed in FY 2025-26 and how many were pending at year-end?"
+  method: local
+  category: grievances
+  must_include: ["66538", "795"]
+  expected: "66,538 filed; 795 pending at year-end."
+  source: "Section A, Q25, BRSR page 293 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+- id: brsr_009
+  question: "Compare FY 2025-26 vs FY 2024-25 customer complaints and pending complaints."
+  method: local
+  category: grievances
+  must_include: ["66538", "795", "49508", "154"]
+  expected: "FY25-26: 66,538 complaints and 795 pending; FY24-25: 49,508 complaints and 154 pending."
+  source: "Section A, Q25, BRSR page 293 (BRSR-FY-2025-26(1).pdf)"
+  type: comparison
+  difficulty: medium
+
+# ---------------- human_rights ----------------
+- id: brsr_020
+  question: "What percentage of plants/offices were assessed for child labour, forced labour, sexual harassment, workplace discrimination and wages?"
+  method: local
+  category: human_rights
+  must_include: ["child labour", "forced/involuntary labour", "sexual harassment", "discrimination", "wages", "100%"]
+  expected: "100% for each listed category."
+  source: "Principle 5, BRSR page 338 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+- id: brsr_021
+  # review: weak must_include needle(s) -- see comment above
+  question: "Did the bank conduct a formal human-rights due-diligence exercise during FY 2025-26?"
+  method: local
+  category: human_rights
+  must_include: ["no", "formal", "human rights due diligence"]
+  expected: "No. It states that no formal human-rights due-diligence exercise was carried out, while human-rights considerations were handled through policies, contractual safeguards and compliance mechanisms."
+  source: "Principle 5 leadership indicators, BRSR page 338 (BRSR-FY-2025-26(1).pdf)"
+  type: negative_fact
+  difficulty: hard
+
+# ---------------- materiality ----------------
+- id: brsr_010
+  question: "Name the first five material responsible-business issues identified by the bank in Section A Q26."
+  method: local
+  category: materiality
+  must_include: ["Climate Change and Decarbonisation", "Corporate Governance and Ethics", "Customer Privacy and Data Security", "Customer Education and Experience", "Digitalisation"]
+  expected: "Climate Change and Decarbonisation; Corporate Governance and Ethics; Customer Privacy and Data Security; Customer Education and Experience; Digitalisation."
+  source: "Section A, Q26, BRSR pages 296-301 (BRSR-FY-2025-26(1).pdf)"
+  type: list
+  difficulty: medium
+
+- id: brsr_011
+  question: "Why does the bank identify climate change and decarbonisation as both a risk and an opportunity?"
+  method: both
+  category: materiality
+  must_include: ["physical", "transition", "regulatory", "energy efficiency", "sustainable financing"]
+  expected: "The bank cites physical and transition risks, regulatory/policy changes and scrutiny; opportunities include energy efficiency, operational sustainability and sustainable financing."
+  source: "Section A, Q26, BRSR page 296 (BRSR-FY-2025-26(1).pdf)"
+  type: semantic
+  difficulty: hard
+
+# ---------------- operations ----------------
+- id: brsr_003
+  question: "As of March 31, 2026, how many national banking outlets and offices did IDBI Bank report, and how many international branches?"
+  method: local
+  category: operations
+  must_include: ["2243", "283", "1"]
+  expected: "2,243 national banking outlets, 283 national offices, and 1 international branch."
+  source: "Section A, Q18, BRSR page 289 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+- id: brsr_004
+  question: "How many states and countries did the bank serve according to the BRSR?"
+  method: local
+  category: operations
+  must_include: ["36", "1"]
+  expected: "36 states/Union Territories nationally and 1 country internationally."
+  source: "Section A, Q19, BRSR page 289 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+# ---------------- provenance ----------------
+- id: brsr_036
+  question: "For BRSR Core quantitative information, what did the assurance practitioners say they did to test the data?"
+  method: local
+  category: provenance
+  must_include: ["sample basis", "underlying records", "recalculation", "consolidation", "analytical procedures"]
+  expected: "They tested the sustainability-information collation process against underlying records on a sample basis, performed substantive testing and recalculation of sample data, tested consolidation completeness, and performed analytical trend procedures."
+  source: "Independent Reasonable Assurance Report, BRSR pages 360-361 (BRSR-FY-2025-26(1).pdf)"
+  type: evidence_requirement
+  difficulty: hard
+
+# ---------------- regulatory_actions ----------------
+- id: brsr_014
+  question: "What RBI penalty amount is disclosed under Principle 1 for FY 2025-26?"
+  method: local
+  category: regulatory_actions
+  must_include: ["3498285"]
+  expected: "₹34,98,285."
+  source: "Principle 1 leadership indicators, BRSR page 317 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+- id: brsr_015
+  # review: weak must_include needle(s) -- see comment above
+  question: "What was the ORBIO award disclosed under Principle 1 about?"
+  method: both
+  category: regulatory_actions
+  must_include: ["5000", "ATM", "Nagpur", "cash was not dispensed", "compensation"]
+  expected: "A customer of another bank attempted a ₹5,000 withdrawal at an IDBI ATM in Nagpur; cash was not dispensed although the account was debited, and ORBIO directed compensation."
+  source: "Principle 1 leadership indicators, BRSR page 319 (BRSR-FY-2025-26(1).pdf)"
+  type: semantic
+  difficulty: hard
+
+# ---------------- retrieval_abstention ----------------
+- id: brsr_035
+  question: "What was IDBI Bank's Scope 3 financed-emissions total for its entire loan portfolio in FY 2025-26?"
+  method: local
+  category: retrieval_abstention
+  # must_not_include used to be ["financed emissions total", "entire loan portfolio"],
+  # which are lifted verbatim from the question -- a correct refusal that restates
+  # the question ("the context does not provide the financed emissions total for the
+  # entire loan portfolio") tripped them, so the item could never pass. Forbid an
+  # actual fabricated total instead, and accept any wording of the refusal.
+  must_include:
+    - ["does not provide", "does not disclose", "not disclosed", "no such total", "not provided"]
+    - ["business travel", "air travel"]
+    - ["sample loan portfolio", "sample portfolio"]
+  must_not_include: ["tco2e for the entire loan portfolio"]
+  expected: "The BRSR does not provide such a total. It says disclosed Scope 3 is business travel (air travel only), while a financed-emissions assessment was conducted for a sample loan portfolio."
+  source: "Scope 3 disclosure and climate discussion, BRSR pages 349 and 287 (BRSR-FY-2025-26(1).pdf)"
+  type: unanswerable
+  difficulty: adversarial
+
+# ---------------- scope3 ----------------
+- id: brsr_027
+  question: "What is included in the bank's disclosed Scope 3 emissions?"
+  method: local
+  category: scope3
+  must_include: ["business travel", "air travel", "spend basis"]
+  expected: "Business travel, with only air travel included, calculated on a spend basis."
+  source: "Environmental disclosures, BRSR page 349 (BRSR-FY-2025-26(1).pdf)"
+  type: exact_fact
+  difficulty: medium
+
+# ---------------- value_chain ----------------
+- id: brsr_019
+  question: "How many key vendors/service providers submitted self-declarations covering environmental, labour and human-rights compliance in FY 2025-26?"
+  method: local
+  category: value_chain
+  must_include: ["134"]
+  expected: "134."
+  source: "Principle 3, BRSR page 332 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+# ---------------- waste ----------------
+- id: brsr_033
+  question: "What quantities of plastic, e-waste, construction and demolition waste, and battery waste were generated in FY 2025-26?"
+  method: local
+  category: waste
+  must_include: ["8.54", "58.70", "144.89", "86.86"]
+  expected: "Plastic 8.54 MT; e-waste 58.70 MT; construction and demolition waste 144.89 MT; battery waste 86.86 MT."
+  source: "Environmental disclosures, BRSR page 346 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+- id: brsr_034
+  # review: weak must_include needle(s) -- see comment above
+  question: "What important reporting-boundary caveat applies to FY 2025-26 waste data?"
+  method: both
+  category: waste
+  must_include: ["not comparable", "Head Office", "Belapur", "ICBF", "pan-India"]
+  expected: "The waste data is not comparable with FY 2024-25; FY25-26 covers the Head Office, Belapur, ICBF and selected ZOs/ROs/offices/branches, while e-waste and battery waste are reported pan-India."
+  source: "Environmental disclosures note, BRSR page 346 (BRSR-FY-2025-26(1).pdf)"
+  type: semantic
+  difficulty: hard
+
+# ---------------- water ----------------
+- id: brsr_028
+  question: "What was total water withdrawal and total water consumption in FY 2025-26?"
+  method: local
+  category: water
+  must_include: ["540151.13", "withdrawal", "consumption"]
+  expected: "Both were 5,40,151.13 KL."
+  source: "Environmental disclosures, BRSR pages 340-341 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy
+
+- id: brsr_029
+  question: "Is the FY 2025-26 water consumption data directly comparable with FY 2024-25?"
+  method: local
+  category: water
+  must_include: ["not comparable", "2244", "283"]
+  expected: "No. The report says it is not comparable because FY25-26 considers water consumption across all 2,244 branches and 283 offices, with stated coverage/estimation methodology."
+  source: "Environmental disclosures note, BRSR pages 340-341 (BRSR-FY-2025-26(1).pdf)"
+  type: temporal_caveat
+  difficulty: hard
+
+# ---------------- workforce ----------------
+- id: brsr_005
+  question: "How many permanent employees, other-than-permanent employees, and total employees were reported as of March 31, 2026?"
+  method: local
+  category: workforce
+  must_include: ["18538", "1585", "20123"]
+  expected: "18,538 permanent employees; 1,585 other-than-permanent employees; 20,123 total employees."
+  source: "Section A, Q20, BRSR page 290 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: medium
+
+- id: brsr_006
+  question: "What percentage of the total employee workforce was female in FY 2025-26?"
+  method: local
+  category: workforce
+  must_include: ["36.29"]
+  expected: "36.29%."
+  source: "Section A, Q20, BRSR page 290 (BRSR-FY-2025-26(1).pdf)"
+  type: numeric
+  difficulty: easy

@@ -5,14 +5,16 @@ Microsoft's GraphRAG approach and the
 [ALucek/GraphRAG-Breakdown](https://github.com/ALucek/GraphRAG-Breakdown) walkthrough.
 
 - **LLM:** OpenRouter (OpenAI-compatible API) — uses your OpenRouter credits
-- **Embeddings:** local, via `fastembed` (`BAAI/bge-small-en-v1.5`) — no extra API key
+- **Embeddings:** local `fastembed` (`BAAI/bge-small-en-v1.5`, no API key) or Gemini
+  `gemini-embedding-001` via Vertex AI / AI Studio — set `EMBED_PROVIDER`
 - **Graph store:** Neo4j (with native vector indexes)
 - **Retrieval:** local search (entity-centric) + global search (map-reduce over communities)
 
 ## Pipeline
 
 ```
-documents ──► token chunking (1200/100, PDF pages marked)
+documents ──► Microsoft MarkItDown -> markdown (PDF pages marked)
+          ──► token chunking (1200/100)
           ──► LLM extraction into the sustainability ontology  (JSON, + gleaning, cached)
               · 13 domains · ~200 entity types · ~120 relationship types
               · every entity/relationship carries properties + provenance + confidence
@@ -58,7 +60,8 @@ cp .env.example .env      # then set OPENROUTER_API_KEY
 ## Usage
 
 ```bash
-# put source files in input/  (.txt .md .pdf .xlsx .xls .csv), then:
+# put source files in input/  (.txt .md, or anything Microsoft MarkItDown reads:
+#   .pdf .docx .pptx .xlsx .xls .csv .html .xml .json .epub), then:
 
 # ---- INGEST: documents -> knowledge graph ----
 python cli.py ingest --reset          # --reset wipes the graph first
@@ -227,11 +230,16 @@ over them. See `graphrag/graphdb.py` for the exact queries.
 | var | default | notes |
 |-----|---------|-------|
 | `OPENROUTER_MODEL` | `openai/gpt-4o-mini` | any OpenRouter chat model |
-| `EMBED_MODEL` / `EMBED_DIM` | `BAAI/bge-small-en-v1.5` / `384` | must match Neo4j vector index dim |
+| `EMBED_PROVIDER` | `fastembed` | `fastembed` (local, no key) or `gemini` (batched API, ~14x faster) |
+| `EMBED_MODEL` / `EMBED_DIM` | `BAAI/bge-small-en-v1.5` / `384` | must match Neo4j vector index dim (auto-rebuilt on change) |
+| `EMBED_BATCH` | `100` | texts per Gemini request |
+| `GEMINI_EMBEDDING_MODEL` | `gemini-embedding-001` | Vertex AI (service account) or AI Studio (`AIza...` key) |
 | `CHUNK_TOKENS` / `CHUNK_OVERLAP` | `1200` / `100` | |
 | `MAX_GLEANINGS` | `1` | extra extraction passes per chunk |
 | `MAX_CLUSTER_SIZE` | `10` | Leiden max community size |
 | `LLM_CONCURRENCY` | `4` | parallel extraction requests |
+| `LLM_MAX_TOKENS` | `4096` | completion cap; lower it if OpenRouter returns `402` (out of credits) |
 
-> Changing `EMBED_DIM` requires dropping the Neo4j vector indexes (or `ingest --reset`
-> after `MATCH (n) DETACH DELETE n` and `DROP INDEX ...`).
+> Changing `EMBED_DIM` (or switching `EMBED_PROVIDER`) is handled automatically:
+> `init_schema` drops any vector index whose dimension no longer matches and recreates
+> it. You still need a full `ingest --reset` so every node is re-embedded.
