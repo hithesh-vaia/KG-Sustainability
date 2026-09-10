@@ -47,7 +47,7 @@ def load_gold(path: Path | None = None) -> list[dict]:
 
 
 def _run_one(item: dict, db: Neo4jClient, llm: LLM, method_override: str | None,
-             chunk_search: bool = False, top_k: int = 15):
+             chunk_search: bool = True, top_k: int = 15):
     method = method_override or item.get("method", "local")
     runs: dict[str, dict] = {}
     if method in ("local", "both"):
@@ -148,9 +148,10 @@ def main() -> int:
     ap.add_argument("--only", help="filter by category")
     ap.add_argument("--ids", help="comma-separated ids to run")
     ap.add_argument("--method-override", choices=["local", "global", "both"])
-    ap.add_argument("--chunk-search", action="store_true",
-                    help="local search also runs a direct query->chunk vector search "
-                         "(plain-RAG safety net for prose/table facts no entity captured)")
+    ap.add_argument("--no-chunk-search", action="store_false", dest="chunk_search",
+                    default=True,
+                    help="disable the direct query->chunk vector search in local search "
+                         "(it is on by default as a plain-RAG safety net)")
     ap.add_argument("--top-k", type=int, default=15, help="seed entities for local search")
     ap.add_argument("--compare", type=Path)
     ap.add_argument("--min-pass", type=float, default=0.0)

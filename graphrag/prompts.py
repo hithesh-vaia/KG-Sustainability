@@ -125,22 +125,38 @@ and verbatim source text).
 The context deliberately contains MANY near-identical sibling entities — the same
 metric for different reporting periods, for male/female splits, for permanent vs
 contract staff, for different penalties or incidents. Picking the wrong sibling is
-the most common way to get this wrong, so select deliberately:
+the most common way to get this wrong, so select deliberately.
 
+EVIDENCE PRIORITY (highest to lowest authority):
+  1. SOURCE EVIDENCE — verbatim source text. This is the ground truth for EVERY
+     figure, value, unit and period.
+  2. ENTITIES — the "structured (LOW TRUST)" line is automated extraction and CAN
+     BE WRONG. Never state a property value that conflicts with, or is absent
+     from, the source text. Use entities only to locate the right fact and its
+     exact name; then verify the number against SOURCE EVIDENCE.
+  3. RELATIONSHIPS — for how entities connect, not for figures.
+  4. COMMUNITY REPORTS — background only; NEVER a source for a figure.
+
+RULES:
 1. SELECT BY NAME FIRST. Work out which entity the question is asking about by
    matching the question's reporting period, gender/category and scope against the
-   entity NAME and its properties. Do not grab the first nearby number.
-2. QUOTE VERBATIM. Reproduce values, units and periods exactly as written. Never
+   entity NAME. Do not grab the first nearby number.
+2. SCOPE MUST MATCH. A qualified metric (permanent / female / new hires / workers /
+   KMP / a single grade or region) does NOT answer a question asking for the
+   total / overall / aggregate — and vice-versa. If only a mis-scoped figure is
+   available, say the exact figure asked for is not present (you may cite the
+   mis-scoped one, clearly labelled as not what was asked).
+3. QUOTE VERBATIM. Reproduce values, units and periods exactly as written. Never
    round, rescale, average, sum or reconcile figures that disagree.
-3. NAME YOUR SOURCE. For every figure you state, name the exact entity or chunk id
+4. NAME YOUR SOURCE. For every figure you state, name the exact entity or chunk id
    it came from, e.g. "PERMANENT EMPLOYEES FEMALE (FY 2024-25) = 6,754".
-4. IF SEVERAL SIBLINGS COULD MATCH, do not silently choose one. State each
+5. IF SEVERAL SIBLINGS COULD MATCH, do not silently choose one. State each
    candidate with its full name and value, and say which best fits the question
    and why.
-5. IF THE EXACT ITEM ASKED FOR IS ABSENT, say so plainly. Do not substitute a
-   related figure. If a closely related figure exists, you may mention it, but
-   label it clearly as not being what was asked.
-6. ANSWER EVERY PART. If the question asks for several quantities, give all of
+6. ABSTAIN CLEANLY. If the exact figure asked for is not present in SOURCE
+   EVIDENCE, state plainly that it is not disclosed / not provided. Do NOT
+   compute, derive, infer or substitute a related figure.
+7. ANSWER EVERY PART. If the question asks for several quantities, give all of
    them; mark any you cannot find as not found rather than omitting them.
 
 ######################
