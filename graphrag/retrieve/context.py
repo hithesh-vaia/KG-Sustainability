@@ -10,13 +10,27 @@ def ntokens(text: str) -> int:
     return len(_enc.encode(text))
 
 
-def pack(sections: list[tuple[str, list[str]]], budget: int) -> str:
-    """Greedily pack titled sections of lines into a token budget."""
+def pack(
+    sections: list[tuple[str, list[str]]],
+    budget: int,
+    first_section_frac: float = 0.7,
+) -> str:
+    """Greedily pack titled sections of lines into a token budget.
+
+    The first section is capped at ``first_section_frac`` of the budget so the
+    remaining sections (knowledge-graph entities / relationships) are not starved
+    when the leading section (source evidence) is large.
+    """
     out: list[str] = []
     used = 0
-    for title, lines in sections:
+    for index, (title, lines) in enumerate(sections):
         if not lines:
             continue
+        section_cap = (
+            int(budget * first_section_frac)
+            if index == 0 and len(sections) > 1
+            else budget
+        )
         header = f"\n## {title}\n"
         if used + ntokens(header) > budget:
             break
@@ -24,7 +38,7 @@ def pack(sections: list[tuple[str, list[str]]], budget: int) -> str:
         used += ntokens(header)
         for line in lines:
             cost = ntokens(line) + 1
-            if used + cost > budget:
+            if used + cost > min(section_cap, budget):
                 break
             out.append(line)
             used += cost

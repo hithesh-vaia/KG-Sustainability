@@ -19,6 +19,7 @@ Retrieval strategy:
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 
 from ..embeddings import embed_one
@@ -26,6 +27,7 @@ from ..graphdb import Neo4jClient
 from ..llm import LLM
 from .. import prompts as P
 from .context import pack
+from .rerank import fiscal_years, rerank_seeds, tokens
 
 
 @dataclass
@@ -41,8 +43,27 @@ class LocalResult:
 # Formatting helpers
 # ---------------------------------------------------------------------------
 
+_PROP_WHITELIST = (
+    "metric_name", "value", "unit", "scope", "reporting_period", "target",
+    "target_value", "target_year", "baseline", "baseline_year",
+)
+
+
+def _parse_properties(properties) -> dict:
+    """Parse the stored ``properties`` JSON string into a dict; ``{}`` on failure."""
+    if isinstance(properties, dict):
+        return properties
+    if not properties or not isinstance(properties, str):
+        return {}
+    try:
+        parsed = json.loads(properties)
+    except (ValueError, TypeError):
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
 def _format_entity(entity: dict) -> str:
-    """Format an entity while preserving useful KG properties."""
+    """Format an entity, whitelisting structured properties and flagging them low-trust."""
 
     name = entity.get("name", "?")
     entity_type = entity.get("type") or "?"
@@ -52,11 +73,19 @@ def _format_entity(entity: dict) -> str:
 
     description = entity.get("description") or ""
 
-    properties = entity.get("properties")
+    props = _parse_properties(entity.get("properties"))
+    kept = [
+        f"{key}={props[key]}"
+        for key in _PROP_WHITELIST
+        if props.get(key) not in (None, "", [])
+    ]
 
     properties_text = ""
-    if properties and properties != "{}":
-        properties_text = f"\n  properties: {properties}"
+    if kept:
+        properties_text = (
+            "\n  structured (LOW TRUST — may be mis-extracted; defer to SOURCE "
+            "EVIDENCE on any conflict): " + ", ".join(kept)
+        )
 
     return (
         f"- {name} "
@@ -83,32 +112,14 @@ def _format_relationship(relationship: dict) -> str:
 
 
 def _format_chunk(chunk: dict) -> str:
-    """Format source evidence with provenance."""
+    """Format source evidence with retrieval provenance."""
 
     chunk_id = chunk.get("id", "?")
     text = (chunk.get("text") or "").strip()
-
-    metadata = []
-
-    if chunk.get("document"):
-        metadata.append(f"document={chunk['document']}")
-
-    if chunk.get("page") is not None:
-        metadata.append(f"page={chunk['page']}")
-
-    if chunk.get("section"):
-        metadata.append(f"section={chunk['section']}")
-
-    if chunk.get("fiscal_year"):
-        metadata.append(f"fiscal_year={chunk['fiscal_year']}")
-
-    provenance = ""
-
-    if metadata:
-        provenance = " [" + ", ".join(metadata) + "]"
+    via = chunk.get("retrieval_source") or "graph"
 
     return (
-        f"- [{chunk_id}]{provenance}\n"
+        f"- [{chunk_id}] (via {via})\n"
         f"  {text}"
     )
 
@@ -139,6 +150,8 @@ def _merge_chunks(
         if not chunk_id:
             continue
 
+        chunk = dict(chunk)
+        chunk["retrieval_source"] = "graph"
         merged[chunk_id] = chunk
 
     # Direct chunk search provides query-level relevance.
@@ -153,64 +166,69 @@ def _merge_chunks(
         existing = merged.get(chunk_id)
 
         if existing is None:
+            chunk = dict(chunk)
+            chunk["retrieval_source"] = "direct"
             merged[chunk_id] = chunk
             continue
 
-        # Prefer the version containing a similarity score.
-        if chunk.get("score") is not None:
-            merged[chunk_id] = chunk
+        # Seen via the graph too: keep the direct score, tag as both.
+        combined = dict(chunk)
+        combined["retrieval_source"] = "graph+direct"
+        if combined.get("score") is None:
+            combined["score"] = existing.get("score")
+        merged[chunk_id] = combined
 
     return list(merged.values())
 
 
-def _rank_chunks(chunks: list[dict]) -> list[dict]:
-    """Rank chunks using retrieval score when available.
+_GRAPH_CHUNK_FLOOR = 0.35
 
-    Direct vector-search results should ideally contain a ``score``.
-    Graph-only chunks without scores retain their original order.
 
-    We deliberately do not invent a similarity score here.
-    """
+def _lexical_chunk_score(
+    chunk: dict,
+    q_tokens: set[str],
+    q_years: set[str],
+    q_nums: set[str],
+) -> float:
+    text = chunk.get("text") or ""
+    c_tok = set(tokens(text))
+
+    s = 0.0
+    if q_tokens:
+        s += 0.6 * (len(q_tokens & c_tok) / len(q_tokens))
+    if q_years and (fiscal_years(text) & q_years):
+        s += 0.5
+    if q_nums:
+        s += 0.25 * len(q_nums & c_tok)
+    return s
+
+
+def _rank_chunks(chunks: list[dict], question: str) -> list[dict]:
+    """Blend vector score, lexical overlap and a floor for unscored graph chunks."""
+
+    q_tokens = {t for t in tokens(question) if len(t) > 2}
+    q_years = fiscal_years(question)
+    q_nums = {t for t in tokens(question) if t.isdigit() and len(t) >= 2}
 
     scored = []
-
     for index, chunk in enumerate(chunks):
-
         if not chunk or not chunk.get("text"):
             continue
 
-        score = chunk.get("score")
-
         try:
-            score = float(score) if score is not None else None
+            vec = float(chunk["score"]) if chunk.get("score") is not None else None
         except (TypeError, ValueError):
-            score = None
+            vec = None
 
-        scored.append(
-            (
-                score is not None,
-                score if score is not None else 0.0,
-                -index,
-                chunk,
-            )
-        )
+        lex = _lexical_chunk_score(chunk, q_tokens, q_years, q_nums)
+        floor = _GRAPH_CHUNK_FLOOR if vec is None else 0.0
+        blended = (vec or 0.0) + 0.8 * lex + floor
 
-    # Chunks with actual vector scores first.
-    # Among scored chunks, highest similarity first.
-    # Unscored graph chunks preserve retrieval order.
-    scored.sort(
-        key=lambda item: (
-            item[0],
-            item[1],
-            item[2],
-        ),
-        reverse=True,
-    )
+        scored.append((blended, -index, chunk))
 
-    return [
-        chunk
-        for _, _, _, chunk in scored
-    ]
+    scored.sort(key=lambda item: (item[0], item[1]), reverse=True)
+
+    return [chunk for _, _, chunk in scored]
 
 
 # ---------------------------------------------------------------------------
@@ -221,7 +239,8 @@ def local_search(
     question: str,
     db: Neo4jClient,
     llm: LLM,
-    top_k: int = 8,
+    top_k: int = 15,
+    seed_keep: int = 8,
     token_budget: int = 11000,
     chunk_search: bool = True,
     max_graph_chunks: int = 12,
@@ -244,9 +263,11 @@ def local_search(
             answer="No relevant entities were found in the knowledge graph."
         )
 
+    ranked = rerank_seeds(seeds, question, keep=seed_keep)
+
     seed_names = [
         entity["name"]
-        for entity in seeds
+        for entity in ranked
         if entity and entity.get("name")
     ]
 
@@ -279,7 +300,6 @@ def local_search(
 
     entities = (
         (graph_context.get("entities") or [])
-        + (graph_context.get("neighbors") or [])
     )
 
     # Deduplicate entities by name.
@@ -411,13 +431,10 @@ def local_search(
     # 9. RANK SOURCE EVIDENCE
     # =======================================================================
 
-    chunks = _rank_chunks(chunks)
+    chunks = _rank_chunks(chunks, question)
 
     # Limit the evidence set before token packing.
-    max_chunks = max(
-        max_graph_chunks,
-        max_direct_chunks,
-    )
+    max_chunks = max_graph_chunks + max_direct_chunks
 
     chunks = chunks[:max_chunks]
 

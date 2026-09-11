@@ -30,7 +30,7 @@ def query(
     level: int = typer.Option(1, help="Community level for global search"),
     top_k: int = typer.Option(15, help="Seed entities for local search"),
     chunk_search: bool = typer.Option(
-        False, help="local: also do a direct query->chunk vector search (plain RAG safety net)"
+        True, help="local: also do a direct query->chunk vector search (plain RAG safety net)"
     ),
 ):
     """Ask a question against the knowledge graph."""
